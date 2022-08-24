@@ -29,16 +29,15 @@
 
 	function onLoad() {
 		setTimeout(() => {
-			console.log('onload');
 			loaded = true;
-			if (localStorage.getItem('options'))
-				options = JSON.parse(localStorage.getItem('options') ?? 'null');
-			if (localStorage.getItem('current')) current = localStorage.getItem('current')!;
 			iframe.contentWindow!.addEventListener('keydown', kd);
 		}, 200);
 	}
 
 	onMount(() => {
+		if (localStorage.getItem('options'))
+				options = JSON.parse(localStorage.getItem('options') ?? 'null');
+		if (localStorage.getItem('current')) current = localStorage.getItem('current')!;
 		if (iframe.contentDocument?.readyState) onLoad();
 		else iframe.onload = onLoad;
 	});
@@ -82,10 +81,9 @@
 	}
 
 	function blink(e: HTMLElement) {
-		const orig = e.style.filter;
 		e.style.filter = 'saturate(100)';
 		setTimeout(function () {
-			e.style.filter = orig;
+			e.style.filter = "";
 		}, 300);
 	}
 
@@ -106,11 +104,13 @@
 	}
 
 	function del() {
+		if (!confirm(`delete ${current}?`)) return;
 		options.splice(options.indexOf(current), 1);
 		localStorage.removeItem(current + '-page');
 		if (options.length === 0) {
 			options = [...options, 'untitled'];
 			current = 'untitled';
+			clearHTML();
 		} else {
 			current = options[0];
 			options = options;
