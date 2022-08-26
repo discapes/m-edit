@@ -7,6 +7,7 @@
 	let current = 'untitled';
 	let loaded = false;
 	let hue = 10;
+	let dirty = 0;
 	let invert = false;
 
 	$: if (loaded) {
@@ -18,25 +19,40 @@
 	}
 
 	$: loaded && localStorage.setItem('options', JSON.stringify(options));
-	$: loaded && (document.body.style.filter = `hue-rotate(${hue*18}deg) ${invert ? "invert()":""}`);
+	$: loaded &&
+		(document.body.style.filter = `hue-rotate(${hue * 18}deg) ${invert ? 'invert()' : ''}`);
 
 	function kd(e: KeyboardEvent) {
 		if (e.key.toLowerCase() === 's' && e.ctrlKey) {
 			e.preventDefault();
 			save();
+		} else {
+			dirty++;
 		}
 	}
 
 	function onLoad() {
-		setTimeout(() => {
-			loaded = true;
-			iframe.contentWindow!.addEventListener('keydown', kd);
-		}, 200);
+		loaded = true;
+		const cw = iframe.contentWindow!;
+		cw.addEventListener('keydown', kd);
+		// const oldec = cw.document.execCommand.bind(cw.document);
+		// cw.document.execCommand = (...args) => {
+		// 	if (args[0] == 'insertHTML') {
+		// 		oldec(...args);
+		// 	}
+		// };
 	}
 
 	onMount(() => {
+		const warning = (e: BeforeUnloadEvent) => {
+			if (dirty < 10) return;
+			e = e || window.event;
+			e && (e.returnValue = `Are you sure?`);
+			return `Are you sure?`;
+		};
+		window.addEventListener(`beforeunload`, warning);
 		if (localStorage.getItem('options'))
-				options = JSON.parse(localStorage.getItem('options') ?? 'null');
+			options = JSON.parse(localStorage.getItem('options') ?? 'null');
 		if (localStorage.getItem('current')) current = localStorage.getItem('current')!;
 		if (iframe.contentDocument?.readyState) onLoad();
 		else iframe.onload = onLoad;
@@ -73,7 +89,8 @@
 
 	function save() {
 		localStorage.setItem(current + '-page', getHTML());
-		blink(document.querySelector(".indicator")!);
+		blink(document.querySelector('.indicator')!);
+		dirty = 0;
 	}
 
 	function onChange() {
@@ -83,7 +100,7 @@
 	function blink(e: HTMLElement) {
 		e.style.filter = 'saturate(100)';
 		setTimeout(function () {
-			e.style.filter = "";
+			e.style.filter = '';
 		}, 300);
 	}
 
@@ -136,9 +153,13 @@
 		<button on:click={save}>Save</button>
 		<button on:click={rename}>Rename</button>
 		<button on:click={del}>Delete</button>
-		<input class="border-r-[3px]"  bind:value={hue} type="number" />
+		<input class="border-r-[3px]" bind:value={hue} type="number" />
 		<input type="checkbox" bind:checked={invert} />
-		<div class="border-slate-600 bg-slate-100 border-[3px] indicator min-h-[36.5px] w-full min-w-[37px] mr-[1.5px] flex justify-center items-center p-1 whitespace-nowrap">Ctrl-S to save</div>
+		<div
+			class="border-slate-600 bg-slate-100 border-[3px] indicator min-h-[36.5px] w-full min-w-[37px] mr-[1.5px] flex justify-center items-center p-1 whitespace-nowrap"
+		>
+			Ctrl-S to save
+		</div>
 	</div>
 	<iframe class="h-full" bind:this={iframe} src="math.html">
 		Your browser doesn't support iframes
@@ -166,10 +187,10 @@
 		@apply bg-slate-100;
 		@apply border-slate-600;
 	}
-	input[type=number] {
+	input[type='number'] {
 		max-width: 100px;
 	}
-	input[type=checkbox] {
+	input[type='checkbox'] {
 		height: 38px;
 		min-width: 40px;
 		@apply bg-slate-100;
