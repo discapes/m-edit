@@ -54,7 +54,7 @@
 		if (localStorage.getItem('options'))
 			options = JSON.parse(localStorage.getItem('options') ?? 'null');
 		if (localStorage.getItem('current')) current = localStorage.getItem('current')!;
-		if (iframe.contentDocument?.readyState) onLoad();
+		if (iframe.contentDocument?.readyState === 'complete') onLoad();
 		else iframe.onload = onLoad;
 	});
 
